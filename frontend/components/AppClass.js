@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import axios from 'axios'
+import React from 'react'
 
 // Suggested initial states
 const initialMessage = ''
@@ -13,23 +14,29 @@ const initialState = {
   steps: initialSteps,
 }
 
+const URL = 'http://localhost:9000/api/result'
+
 export default class AppClass extends React.Component {
-  // THE FOLLOWING HELPERS ARE JUST RECOMMENDATIONS.
-  // You can delete them and build your own logic from scratch.
   constructor(){
     super()
     this.state = initialState
   }
 
-  getXY = (ind) => {
-    // It it not necessary to have a state to track the coordinates.
-    // It's enough to know what index the "B" is at, to be able to calculate them.
+  getXY = (ind) => { 
+    let i = 0
+    for (let y = 0; y < 3; ++y){
+      for (let x = 0; x < 3; ++x){
+        if (i === ind){
+          return `${x+1}${y+1}`
+        }
+        i++
+      }
+    }
   }
 
   getXYMessage = () => {
-    // It it not necessary to have a state to track the "Coordinates (2, 2)" message for the user.
-    // You can use the `getXY` helper above to obtain the coordinates, and then `getXYMessage`
-    // returns the fully constructed string.
+    const cord = this.getXY(this.state.index)
+    return `Coordinates (${cord[0]}, ${cord[1]})`
   }
 
   reset = () => {
@@ -40,41 +47,47 @@ export default class AppClass extends React.Component {
     let ind = this.state.index
     
     if (direction === "up"){
-      if (ind < 3) return ind
-      return (ind - 3)
+      return (ind < 3) ? ind : (ind - 3)
     }
     if (direction === "down"){
-      if (ind >= 6) return ind
-      return (ind + 3)
+      return (ind >= 6) ? ind : (ind + 3)
     }
     if (direction === "right"){
-      if (ind && ((ind + 1)%3 === 0)) return ind
-      return (ind + 1)
+      return (ind && ((ind + 1)%3 === 0)) ? ind : (ind + 1)
     }
     if (direction === "left"){
-      if ((ind )%3 === 0) return ind
-      return (ind - 1)
+      return ((ind )%3 === 0) ? ind : ind - 1
     }
   }
 
-  move = async (evt) => {
+  move = (evt) => {
     const ind = this.state.index
     const newIndex = this.getNextIndex(evt.target.id)
     let newState = {...this.state, index: newIndex}
     
     if (ind != newIndex) {
       newState = ({...newState, steps: this.state.steps+1})
-      console.log(this.state.steps)
     }
     this.setState(newState)
   }
 
   onChange = (evt) => {
+    evt.preventDefault()
     this.setState({...this.state, email: evt.target.value})
   }
 
   onSubmit = (evt) => {
-    // Use a POST request to send a payload to the server.
+    evt.preventDefault()
+    const postData = {
+      "x": this.getXY(this.state.index)[0],
+      "y": this.getXY(this.state.index)[1],
+      "steps": this.state.steps,
+      "email": this.state.email
+    }
+    console.log(postData)
+    axios.post(URL, postData)
+    .then(res=>console.log(res))
+    .catch(err => console.log(err))
   }
 
   render() {
@@ -82,7 +95,7 @@ export default class AppClass extends React.Component {
     return (
       <div id="wrapper" className={className}>
         <div className="info">
-          <h3 id="coordinates">Coordinates (2, 2)</h3>
+          <h3 id="coordinates">{this.getXYMessage()}</h3>
           <h3 id="steps">You moved {this.state.steps} times</h3>
         </div>
         <div id="grid">
@@ -104,7 +117,7 @@ export default class AppClass extends React.Component {
           <button id="down" onClick={e => this.move(e)}>DOWN</button>
           <button id="reset" onClick={() => this.reset()}>reset</button>
         </div>
-        <form>
+        <form onSubmit={(e) => this.onSubmit(e)}>
           <input id="email" type="email" placeholder="type email" value={this.state.email} onChange={this.onChange}></input>
           <input id="submit" type="submit"></input>
         </form>
