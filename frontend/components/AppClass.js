@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 // Suggested initial states
 const initialMessage = ''
@@ -16,8 +16,12 @@ const initialState = {
 export default class AppClass extends React.Component {
   // THE FOLLOWING HELPERS ARE JUST RECOMMENDATIONS.
   // You can delete them and build your own logic from scratch.
+  constructor(){
+    super()
+    this.state = initialState
+  }
 
-  getXY = () => {
+  getXY = (ind) => {
     // It it not necessary to have a state to track the coordinates.
     // It's enough to know what index the "B" is at, to be able to calculate them.
   }
@@ -29,22 +33,44 @@ export default class AppClass extends React.Component {
   }
 
   reset = () => {
-    // Use this helper to reset all states to their initial values.
+    this.setState(initialState)
   }
 
   getNextIndex = (direction) => {
-    // This helper takes a direction ("left", "up", etc) and calculates what the next index
-    // of the "B" would be. If the move is impossible because we are at the edge of the grid,
-    // this helper should return the current index unchanged.
+    let ind = this.state.index
+    
+    if (direction === "up"){
+      if (ind < 3) return ind
+      return (ind - 3)
+    }
+    if (direction === "down"){
+      if (ind >= 6) return ind
+      return (ind + 3)
+    }
+    if (direction === "right"){
+      if (ind && ((ind + 1)%3 === 0)) return ind
+      return (ind + 1)
+    }
+    if (direction === "left"){
+      if ((ind )%3 === 0) return ind
+      return (ind - 1)
+    }
   }
 
-  move = (evt) => {
-    // This event handler can use the helper above to obtain a new index for the "B",
-    // and change any states accordingly.
+  move = async (evt) => {
+    const ind = this.state.index
+    const newIndex = this.getNextIndex(evt.target.id)
+    let newState = {...this.state, index: newIndex}
+    
+    if (ind != newIndex) {
+      newState = ({...newState, steps: this.state.steps+1})
+      console.log(this.state.steps)
+    }
+    this.setState(newState)
   }
 
   onChange = (evt) => {
-    // You will need this to update the value of the input.
+    this.setState({...this.state, email: evt.target.value})
   }
 
   onSubmit = (evt) => {
@@ -57,13 +83,13 @@ export default class AppClass extends React.Component {
       <div id="wrapper" className={className}>
         <div className="info">
           <h3 id="coordinates">Coordinates (2, 2)</h3>
-          <h3 id="steps">You moved 0 times</h3>
+          <h3 id="steps">You moved {this.state.steps} times</h3>
         </div>
         <div id="grid">
           {
             [0, 1, 2, 3, 4, 5, 6, 7, 8].map(idx => (
-              <div key={idx} className={`square${idx === 4 ? ' active' : ''}`}>
-                {idx === 4 ? 'B' : null}
+              <div key={idx} className={`square${idx === this.state.index ? ' active' : ''}`}>
+                {idx === this.state.index ? 'B' : null}
               </div>
             ))
           }
@@ -72,14 +98,14 @@ export default class AppClass extends React.Component {
           <h3 id="message"></h3>
         </div>
         <div id="keypad">
-          <button id="left">LEFT</button>
-          <button id="up">UP</button>
-          <button id="right">RIGHT</button>
-          <button id="down">DOWN</button>
-          <button id="reset">reset</button>
+          <button id="left" onClick={e => this.move(e)}>LEFT</button>
+          <button id="up" onClick={e => this.move(e)}>UP</button>
+          <button id="right" onClick={e => this.move(e)}>RIGHT</button>
+          <button id="down" onClick={e => this.move(e)}>DOWN</button>
+          <button id="reset" onClick={() => this.reset()}>reset</button>
         </div>
         <form>
-          <input id="email" type="email" placeholder="type email"></input>
+          <input id="email" type="email" placeholder="type email" value={this.state.email} onChange={this.onChange}></input>
           <input id="submit" type="submit"></input>
         </form>
       </div>
