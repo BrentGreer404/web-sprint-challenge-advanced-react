@@ -88,6 +88,7 @@ export default class AppClass extends React.Component {
     axios.post(URL, postData)
     .then(res=>console.log(res))
     .catch(err => console.log(err))
+    .finally(this.reset())
   }
 
   render() {
