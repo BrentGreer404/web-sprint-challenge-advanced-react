@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-
+import axios from 'axios'
 // Suggested initial states
 const initialMessage = ''
 const initialEmail = ''
@@ -39,6 +39,10 @@ export default function AppFunctional(props) {
     setSteps(initialSteps)
     setIndex(initialIndex)
   }
+  partReset = () => {
+    setMessage(initialMessage)
+    setEmail(initialEmail)
+  }
 
   const getNextIndex = (direction) => {
     let ind = index
@@ -64,11 +68,18 @@ export default function AppFunctional(props) {
     if (ind != newIndex) {
       setSteps(steps+1)
     }
+    else{
+      setMessage(`You can't go ${evt.target.id}`)
+    }
   }
 
   const onChange = (evt) => {
     evt.preventDefault()
     setEmail(evt.target.value)
+  }
+
+  const checkEmail = (email) => {
+    return /\S+@\S+\.\S+/.test(email)
   }
 
   const onSubmit = (evt) => {
@@ -79,18 +90,28 @@ export default function AppFunctional(props) {
       "steps": steps,
       "email": email
     }
-    console.log(postData)
-    axios.post(URL, postData)
-    .then(res=>console.log(res))
-    .catch(err => console.log(err))
-    .finally(reset())
+    if (checkEmail((email))){
+      axios.post(URL, postData)
+      .then(res=> setMessage(res.data.message))
+      .catch(err => setMessage(err.response.data.message))
+      // .catch(err => console.log(err))
+      .finally(partReset())
+    }
+    else{
+      if (!email.length){
+        setMessage('Ouch: email is required')
+      }
+      else {
+        setMessage('Ouch: email must be a valid email')
+      }
+    }
   }
 
   return (
     <div id="wrapper" className={props.className}>
       <div className="info">
         <h3 id="coordinates">{getXYMessage()}</h3>
-        <h3 id="steps">You moved {steps} times</h3>
+        <h3 id="steps">You moved {steps} {steps != 1 ? "times": "time"}</h3>
       </div>
       <div id="grid">
         {
@@ -102,7 +123,7 @@ export default function AppFunctional(props) {
         }
       </div>
       <div className="info">
-        <h3 id="message"></h3>
+        <h3 id="message">{message}</h3>
       </div>
       <div id="keypad">
         <button id="left" onClick={e => move(e)}>LEFT</button>

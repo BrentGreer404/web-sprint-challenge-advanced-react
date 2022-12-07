@@ -42,6 +42,9 @@ export default class AppClass extends React.Component {
   reset = () => {
     this.setState(initialState)
   }
+  partReset = () => {
+    this.setState({...this.state, message: initialMessage, email: initialEmail})
+  }
 
   getNextIndex = (direction) => {
     let ind = this.state.index
@@ -68,12 +71,19 @@ export default class AppClass extends React.Component {
     if (ind != newIndex) {
       newState = ({...newState, steps: this.state.steps+1})
     }
+    else{
+      newState = ({...newState, message: `You can't go ${evt.target.id}`})
+    }
     this.setState(newState)
   }
 
   onChange = (evt) => {
     evt.preventDefault()
     this.setState({...this.state, email: evt.target.value})
+  }
+
+  checkEmail = (email) => {
+    return /\S+@\S+\.\S+/.test(email)
   }
 
   onSubmit = (evt) => {
@@ -84,11 +94,21 @@ export default class AppClass extends React.Component {
       "steps": this.state.steps,
       "email": this.state.email
     }
-    console.log(postData)
-    axios.post(URL, postData)
-    .then(res=>console.log(res))
-    .catch(err => console.log(err))
-    .finally(this.reset())
+    if (this.checkEmail((this.state.email))){
+      axios.post(URL, postData)
+      .then(res=>this.setState({...this.state, message: res.data.message}))
+      .catch(err => this.setState({...this.state, message: err.response.data.message}))
+      .finally(this.partReset())
+    }
+    else{
+      if (!this.state.email.length){
+        this.setState({...this.state, message: 'Ouch: email is required'})
+      }
+      else {
+        this.setState({...this.state, message: 'Ouch: email must be a valid email'})
+      }
+    }
+    
   }
 
   render() {
@@ -97,7 +117,7 @@ export default class AppClass extends React.Component {
       <div id="wrapper" className={className}>
         <div className="info">
           <h3 id="coordinates">{this.getXYMessage()}</h3>
-          <h3 id="steps">You moved {this.state.steps} times</h3>
+          <h3 id="steps">You moved {this.state.steps} {this.state.steps != 1 ? "times": "time"}</h3>
         </div>
         <div id="grid">
           {
@@ -109,7 +129,7 @@ export default class AppClass extends React.Component {
           }
         </div>
         <div className="info">
-          <h3 id="message"></h3>
+          <h3 id="message">{this.state.message}</h3>
         </div>
         <div id="keypad">
           <button id="left" onClick={e => this.move(e)}>LEFT</button>
